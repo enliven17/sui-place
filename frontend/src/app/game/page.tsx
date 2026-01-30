@@ -114,12 +114,18 @@ export default function Game() {
       <div
         className={`absolute bottom-0 left-0 right-0 z-50 transition-transform duration-500 ease-out ${isPanelOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
-        style={{ maxHeight: '70vh' }}
       >
-        <div className="absolute inset-0 bg-gray-900/98 backdrop-blur-xl" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gray-700" />
+        {/* Toggle Button - Attached to top of panel */}
+        <div className="absolute -top-[36px] left-1/2 -translate-x-1/2">
+          <button
+            onClick={() => setIsPanelOpen(!isPanelOpen)}
+            className="bg-gray-900/95 hover:bg-gray-800/95 backdrop-blur-md text-gray-200 px-6 py-2 rounded-t-lg border border-gray-700 border-b-0 hover:border-gray-600 shadow-xl transition-all duration-200"
+          >
+            <span className={`block text-sm transition-transform duration-300 ${isPanelOpen ? 'rotate-180' : ''}`}>↑</span>
+          </button>
+        </div>
 
-        <div className="relative overflow-y-auto p-6" style={{ maxHeight: '70vh' }}>
+        <div className="bg-gray-900/98 backdrop-blur-xl border-t border-gray-700 overflow-y-auto p-6" style={{ maxHeight: '70vh' }}>
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors duration-300">
@@ -151,16 +157,6 @@ export default function Game() {
           </div>
         </div>
       </div>
-
-      <button
-        onClick={() => setIsPanelOpen(!isPanelOpen)}
-        className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${isPanelOpen ? 'bottom-[calc(70vh-350px)]' : 'bottom-4'
-          }`}
-      >
-        <div className="bg-gray-800/90 hover:bg-gray-700/90 backdrop-blur-md text-gray-200 px-4 py-2 rounded-lg border border-gray-700 hover:border-gray-600 shadow-xl transition-all duration-200">
-          <span className={`block text-sm transition-transform duration-300 ${isPanelOpen ? 'rotate-180' : ''}`}>↑</span>
-        </div>
-      </button>
     </main>
   );
 }
