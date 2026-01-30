@@ -41,7 +41,11 @@ export async function fetchAllPixels(): Promise<PixelRow[]> {
         .select('*');
 
     if (error) {
-        console.error('Error fetching pixels:', error);
+        console.error('Error fetching pixels detailed:', JSON.stringify(error, null, 2));
+        console.log('Supabase Config Check:', {
+            urlPresent: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+            keyPresent: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        });
         return [];
     }
 

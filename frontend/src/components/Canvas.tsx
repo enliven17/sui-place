@@ -19,19 +19,6 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
         loadCanvas();
     }, [loadCanvas]);
 
-    // Prevent default scroll on container
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const preventScroll = (e: WheelEvent) => {
-            e.preventDefault();
-        };
-
-        container.addEventListener('wheel', preventScroll, { passive: false });
-        return () => container.removeEventListener('wheel', preventScroll);
-    }, []);
-
     // Draw canvas
     const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
@@ -79,12 +66,27 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
         drawCanvas();
     }, [drawCanvas]);
 
-    // Handle mouse move for hover
+    // Handle mouse move for hover and pan
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
         if (isDragging) {
             const dx = e.clientX - lastMouse.x;
             const dy = e.clientY - lastMouse.y;
-            setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+
+            setOffset(prev => {
+                const newX = prev.x + dx;
+                const newY = prev.y + dy;
+
+                // Pan limits - keep at least some part of canvas visible
+                // Limit offset to roughly +/- canvas_size/2
+                const limitX = (CANVAS_WIDTH * PIXEL_SIZE * scale) / 1.5;
+                const limitY = (CANVAS_HEIGHT * PIXEL_SIZE * scale) / 1.5;
+
+                return {
+                    x: Math.max(-limitX, Math.min(limitX, newX)),
+                    y: Math.max(-limitY, Math.min(limitY, newY))
+                };
+            });
+
             setLastMouse({ x: e.clientX, y: e.clientY });
             return;
         }
@@ -93,6 +95,9 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
         if (!canvas) return;
 
         const rect = canvas.getBoundingClientRect();
+        // Adjust coordinate calculation for scale and pan
+        // We need to inverse the transform: (client - rect - offset) / scale
+        // But since checking hover on untransformed logic inside canvas pixel grid
         const x = Math.floor((e.clientX - rect.left) / (PIXEL_SIZE * scale));
         const y = Math.floor((e.clientY - rect.top) / (PIXEL_SIZE * scale));
 
@@ -123,7 +128,8 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
     const handleWheel = useCallback((e: React.WheelEvent) => {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        setScale(prev => Math.max(0.5, Math.min(5, prev * delta)));
+        // Limit zoom out to 1x and zoom in to 20x
+        setScale(prev => Math.max(1, Math.min(20, prev * delta)));
     }, []);
 
     // Mouse down/up for panning
@@ -165,6 +171,7 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
                     transform: `scale(${scale}) translate(${offset.x / scale}px, ${offset.y / scale}px)`,
                     imageRendering: 'pixelated',
                     cursor: isDragging ? 'grabbing' : 'crosshair',
+                    touchAction: 'none',
                 }}
                 className="border border-gray-700 shadow-2xl"
                 onMouseMove={handleMouseMove}

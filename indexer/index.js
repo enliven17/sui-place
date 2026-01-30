@@ -27,9 +27,9 @@ console.log(`📦 Package ID: ${PACKAGE_ID}`);
 // Event handler
 async function handlePixelChanged(event) {
     const { x, y, color, sender } = event.parsedJson;
-    
+
     console.log(`🎨 Pixel changed: (${x}, ${y}) -> color ${color} by ${sender}`);
-    
+
     try {
         const { error } = await supabase
             .from('pixels')
@@ -42,7 +42,7 @@ async function handlePixelChanged(event) {
             }, {
                 onConflict: 'x,y'
             });
-        
+
         if (error) {
             console.error('❌ Supabase upsert error:', error);
         } else {
@@ -56,7 +56,7 @@ async function handlePixelChanged(event) {
 // Subscribe to events
 async function subscribeToEvents() {
     console.log('📺 Subscribing to PixelChanged events...');
-    
+
     try {
         const unsubscribe = await sui.subscribeEvent({
             filter: {
@@ -64,17 +64,17 @@ async function subscribeToEvents() {
             },
             onMessage: handlePixelChanged
         });
-        
+
         console.log('✅ Successfully subscribed to events');
         console.log('👀 Watching for pixel changes...\n');
-        
+
         // Keep process alive
         process.on('SIGINT', () => {
             console.log('\n🛑 Shutting down indexer...');
             unsubscribe();
             process.exit(0);
         });
-        
+
     } catch (err) {
         console.error('❌ Failed to subscribe to events:', err);
         process.exit(1);
@@ -83,3 +83,7 @@ async function subscribeToEvents() {
 
 // Start indexer
 subscribeToEvents();
+
+// Force keep-alive
+setInterval(() => { }, 1000); // 1 saat
+
