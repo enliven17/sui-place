@@ -1,166 +1,71 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { useSignAndExecuteTransaction, useCurrentAccount } from '@mysten/dapp-kit';
-import Canvas from '@/components/Canvas';
-import ColorPicker from '@/components/ColorPicker';
-import PixelInfo from '@/components/PixelInfo';
-import CooldownTimer from '@/components/CooldownTimer';
-import WalletButton from '@/components/WalletButton';
-import { useCanvasStore } from '@/lib/store';
-import { createDrawTransaction } from '@/lib/sui';
-import { COOLDOWN_MS, CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/constants';
+import Link from 'next/link';
+import PixelBlast from '@/components/PixelBlast';
 
 export default function Home() {
-  const account = useCurrentAccount();
-  const { mutate: signAndExecute, isPending } = useSignAndExecuteTransaction();
-  const { selectedColor, cooldownEnd, startCooldown, setPixel } = useCanvasStore();
-  const [error, setError] = useState<string | null>(null);
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-
-  const handlePixelClick = useCallback(async (x: number, y: number) => {
-    if (!account) {
-      setError('Please connect your wallet first');
-      return;
-    }
-
-    if (cooldownEnd && Date.now() < cooldownEnd) {
-      setError('Please wait for cooldown to finish');
-      return;
-    }
-
-    setError(null);
-
-    // Optimistic update
-    setPixel(x, y, selectedColor);
-
-    try {
-      const tx = createDrawTransaction(x, y, selectedColor);
-
-      signAndExecute(
-        { transaction: tx },
-        {
-          onSuccess: () => {
-            console.log('Pixel placed successfully!');
-            startCooldown(COOLDOWN_MS);
-          },
-          onError: (err) => {
-            console.error('Transaction failed:', err);
-            setError('Transaction failed. Please try again.');
-          }
-        }
-      );
-    } catch (err) {
-      console.error('Error creating transaction:', err);
-      setError('Failed to create transaction');
-    }
-  }, [account, cooldownEnd, selectedColor, signAndExecute, startCooldown, setPixel]);
-
   return (
-    <main className="h-screen overflow-hidden bg-gray-950 relative">
-      {/* Canvas Area - Full Screen */}
-      <Canvas onPixelClick={handlePixelClick} />
+    <main className="h-screen w-screen overflow-hidden bg-black relative">
+      {/* Background Animation */}
+      <div className="absolute inset-0">
+        <PixelBlast
+          variant="square"
+          pixelSize={4}
+          color="#3B82F6"
+          patternScale={2}
+          patternDensity={1}
+          pixelSizeJitter={0}
+          enableRipples
+          rippleSpeed={0.4}
+          rippleThickness={0.12}
+          rippleIntensityScale={1.5}
+          liquid={false}
+          liquidStrength={0.12}
+          liquidRadius={1.2}
+          liquidWobbleSpeed={5}
+          speed={0.5}
+          edgeFade={0.25}
+          transparent
+        />
+      </div>
 
-      {/* Top Left - Logo */}
-      <div className="absolute top-4 left-4 z-40 flex items-center gap-2 bg-gray-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-gray-800/50">
-        <h1 className="text-sm font-bold text-white">
-          SuiPlace
-        </h1>
-        <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded font-medium">
+      {/* Content */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
+        <div className="text-center space-y-8 max-w-4xl">
+          {/* Logo/Title */}
+          <div className="space-y-4">
+            <h1 className="text-7xl md:text-8xl font-bold text-white tracking-tight">
+              SuiPlace
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-300 font-light">
+              Collaborative pixel art on the Sui blockchain
+            </p>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-4 max-w-2xl mx-auto">
+            <p className="text-gray-400 text-lg">
+              Place pixels, create art, and be part of a decentralized canvas where every pixel is owned on-chain.
+            </p>
+          </div>
+
+          {/* CTA Button */}
+          <div className="flex justify-center items-center pt-8">
+            <Link href="/game">
+              <button className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30">
+                Start Creating →
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Testnet Badge */}
+      <div className="absolute top-4 right-4 z-20">
+        <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg font-medium text-sm border border-blue-500/30 backdrop-blur-sm">
           Testnet
         </span>
       </div>
-
-      {/* Top Right - Cooldown Timer */}
-      <div className="absolute top-4 right-4 z-40">
-        <CooldownTimer />
-      </div>
-
-      {/* Loading overlay */}
-      {isPending && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-30">
-          <div className="bg-gray-800 rounded-lg p-4 flex items-center gap-3">
-            <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-            <span className="text-white">Placing pixel...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Error toast */}
-      {error && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-500/90 text-white px-4 py-2 rounded-lg shadow-lg z-40">
-          {error}
-        </div>
-      )}
-
-      {/* Bottom Panel */}
-      <div 
-        className={`absolute bottom-0 left-0 right-0 z-50 transition-transform duration-500 ease-out ${
-          isPanelOpen ? 'translate-y-0' : 'translate-y-full'
-        }`}
-        style={{ maxHeight: '70vh' }}
-      >
-        {/* Background */}
-        <div className="absolute inset-0 bg-gray-900/98 backdrop-blur-xl" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gray-700" />
-        
-        {/* Panel Content */}
-        <div className="relative overflow-y-auto p-6" style={{ maxHeight: '70vh' }}>
-          <div className="max-w-7xl mx-auto">
-            {/* Main Controls Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Color Picker Card with Wallet */}
-              <div className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors duration-300">
-                <h2 className="text-xs font-semibold text-gray-200 mb-3">Color Palette</h2>
-                <ColorPicker />
-                <div className="mt-3 pt-3 border-t border-gray-700/50 flex items-center justify-center">
-                  <WalletButton />
-                </div>
-              </div>
-
-              {/* Pixel Info Card */}
-              <div className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors duration-300">
-                <h2 className="text-xs font-semibold text-gray-200 mb-3">Pixel Details</h2>
-                <PixelInfo />
-              </div>
-
-              {/* Controls Card */}
-              <div className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors duration-300">
-                <h2 className="text-xs font-semibold text-gray-200 mb-3">Controls</h2>
-                <div className="space-y-2">
-                  <div className="text-xs text-gray-300 bg-gray-900/30 px-2.5 py-2 rounded-lg">
-                    Click to place pixel
-                  </div>
-                  <div className="text-xs text-gray-300 bg-gray-900/30 px-2.5 py-2 rounded-lg">
-                    Scroll to zoom
-                  </div>
-                  <div className="text-xs text-gray-300 bg-gray-900/30 px-2.5 py-2 rounded-lg">
-                    Shift + drag to pan
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-400 bg-gray-900/30 px-2.5 py-2 rounded-lg mt-3 border-t border-gray-700/50 pt-2">
-                    <span>Canvas</span>
-                    <span className="font-mono text-blue-400">{CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Toggle Button - Minimal */}
-      <button
-        onClick={() => setIsPanelOpen(!isPanelOpen)}
-        className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${
-          isPanelOpen ? 'bottom-[calc(70vh-350px)]' : 'bottom-4'
-        }`}
-      >
-        <div className="bg-gray-800/90 hover:bg-gray-700/90 backdrop-blur-md text-gray-200 px-4 py-2 rounded-lg border border-gray-700 hover:border-gray-600 shadow-xl transition-all duration-200">
-          <span className={`block text-sm transition-transform duration-300 ${isPanelOpen ? 'rotate-180' : ''}`}>
-            ↑
-          </span>
-        </div>
-      </button>
     </main>
   );
 }

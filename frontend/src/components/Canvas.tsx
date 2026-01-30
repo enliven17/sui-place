@@ -7,7 +7,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, PIXEL_SIZE, COLORS, ColorIndex } from '@/l
 export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: number) => void }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [scale, setScale] = useState(3);
+    const [scale, setScale] = useState(4);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [lastMouse, setLastMouse] = useState({ x: 0, y: 0 });
