@@ -20,8 +20,8 @@ export default function Home() {
           rippleThickness={0.12}
           rippleIntensityScale={1.5}
           liquid={false}
-          liquidStrength={0.12}
-          liquidRadius={1.2}
+          liquidStrength={0.25}
+          liquidRadius={1.5}
           liquidWobbleSpeed={5}
           speed={0.5}
           edgeFade={0.25}
@@ -30,7 +30,7 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 pointer-events-none">
         <div className="text-center space-y-8 max-w-4xl">
           {/* Logo/Title */}
           <div className="space-y-4">
@@ -60,7 +60,7 @@ export default function Home() {
 
           {/* CTA Button */}
           <div className="flex justify-center items-center pt-8">
-            <Link href="/game">
+            <Link href="/game" className="pointer-events-auto">
               <button className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-full border border-white/20 hover:border-white/40 transition-all duration-300 backdrop-blur-sm">
                 Let's Paint
               </button>
