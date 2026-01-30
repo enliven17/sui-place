@@ -19,6 +19,19 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
         loadCanvas();
     }, [loadCanvas]);
 
+    // Prevent default scroll on container
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const preventScroll = (e: WheelEvent) => {
+            e.preventDefault();
+        };
+
+        container.addEventListener('wheel', preventScroll, { passive: false });
+        return () => container.removeEventListener('wheel', preventScroll);
+    }, []);
+
     // Draw canvas
     const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;

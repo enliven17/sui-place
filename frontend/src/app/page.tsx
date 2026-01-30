@@ -56,7 +56,7 @@ export default function Home() {
   }, [account, cooldownEnd, selectedColor, signAndExecute, startCooldown, setPixel]);
 
   return (
-    <main className="min-h-screen bg-gray-950 flex flex-col">
+    <main className="h-screen overflow-hidden bg-gray-950 flex flex-col">
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -77,7 +77,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex overflow-hidden">
         {/* Canvas Area */}
         <div className="flex-1 relative">
           <Canvas onPixelClick={handlePixelClick} />
@@ -101,7 +101,7 @@ export default function Home() {
         </div>
 
         {/* Sidebar */}
-        <aside className="w-64 border-l border-gray-800 bg-gray-900/50 p-4 flex flex-col gap-6">
+        <aside className="w-64 border-l border-gray-800 bg-gray-900/50 p-4 flex flex-col gap-6 overflow-y-auto">
           <div>
             <h2 className="text-sm font-medium text-gray-400 mb-2">Select Color</h2>
             <ColorPicker />
