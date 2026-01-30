@@ -1,0 +1,16 @@
+{
+  "name": "sui-place-indexer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Sui event indexer for SuiPlace - syncs blockchain events to Supabase",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@mysten/sui": "^1.0.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Sui Move build artifacts
+sui_place/build/
+*.mv
+
+# Downloaded Sui CLI binaries (don't commit these)
+*.exe
+*.tgz
+supabase_keys.json
+
+# Supabase local
+supabase/.temp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+*.pem
