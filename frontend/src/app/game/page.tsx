@@ -16,7 +16,7 @@ import { COOLDOWN_MS, CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/constants';
 export default function Game() {
   const account = useCurrentAccount();
   const { mutate: signAndExecute, isPending } = useSignAndExecuteTransaction();
-  const { selectedColor, cooldownEnd, startCooldown, setPixel } = useCanvasStore();
+  const { selectedColor, cooldownEnd, startCooldown, setPixel, revertPixel } = useCanvasStore();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -33,6 +33,9 @@ export default function Game() {
     }
 
     setError(null);
+
+    // Save previous state before optimistic update
+    const previousPixelState = useCanvasStore.getState().pixels.get(`${x},${y}`) || null;
 
     // Optimistic update
     setPixel(x, y, selectedColor);
@@ -59,6 +62,9 @@ export default function Game() {
           onError: (err: Error) => {
             console.error('Transaction failed:', err);
 
+            // Revert optimistic update
+            revertPixel(x, y, previousPixelState);
+
             // Check if user rejected the transaction
             const errorMessage = err.message?.toLowerCase() || '';
             if (errorMessage.includes('rejected') || errorMessage.includes('user rejected') || errorMessage.includes('cancelled') || errorMessage.includes('denied')) {
@@ -71,9 +77,11 @@ export default function Game() {
       );
     } catch (err) {
       console.error('Error creating transaction:', err);
+      // Revert optimistic update on error
+      revertPixel(x, y, previousPixelState);
       setError('Failed to create transaction');
     }
-  }, [account, cooldownEnd, selectedColor, signAndExecute, startCooldown, setPixel]);
+  }, [account, cooldownEnd, selectedColor, signAndExecute, startCooldown, setPixel, revertPixel]);
 
   return (
     <main className="h-screen overflow-hidden bg-gray-950 relative">

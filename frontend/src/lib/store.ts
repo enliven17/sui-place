@@ -20,6 +20,7 @@ interface CanvasState {
 
     // Actions
     setPixel: (x: number, y: number, color: number, owner?: string | null) => void;
+    revertPixel: (x: number, y: number, previousState: { color: number; owner: string | null } | null) => void;
     setSelectedColor: (color: ColorIndex) => void;
     setHoverPosition: (pos: { x: number; y: number } | null) => void;
     loadCanvas: () => Promise<void>;
@@ -42,6 +43,20 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 color,
                 owner: owner ?? current.owner
             });
+            return { pixels: newPixels };
+        });
+    },
+
+    revertPixel: (x, y, previousState) => {
+        set((state) => {
+            const newPixels = new Map(state.pixels);
+            if (previousState === null) {
+                // If there was no previous state, remove the pixel (revert to default white)
+                newPixels.delete(`${x},${y}`);
+            } else {
+                // Restore the previous state
+                newPixels.set(`${x},${y}`, previousState);
+            }
             return { pixels: newPixels };
         });
     },

@@ -167,7 +167,7 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
     // Handle wheel for zoom
     const handleWheel = useCallback((e: React.WheelEvent) => {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const delta = e.deltaY > 0 ? 0.95 : 1.05;
 
         // Capture the currently centered pixel BEFORE changing scale
         // This uses the same calculation as the selection useEffect
@@ -225,9 +225,9 @@ export default function Canvas({ onPixelClick }: { onPixelClick: (x: number, y: 
             setLastMouse({ x: e.clientX, y: e.clientY });
             dragDistanceRef.current = 0;
             // Sync raw offset with current snapped offset state at start of drag
-            rawOffsetRef.current = { ...offset };
+            rawOffsetRef.current = { x: offset.x, y: offset.y };
         }
-    }, []);
+    }, [offset]);
 
     const handleMouseUp = useCallback(() => {
         setIsDragging(false);
