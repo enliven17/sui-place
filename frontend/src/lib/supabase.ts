@@ -28,6 +28,8 @@ export type PixelRow = {
     y: number;
     color: number;
     last_painter: string | null;
+    blockchain: 'sui' | 'stellar' | 'starknet';
+    tx_hash: string | null;
     updated_at: string;
 };
 
@@ -52,8 +54,15 @@ export async function fetchAllPixels(): Promise<PixelRow[]> {
     return data || [];
 }
 
-// Upsert a pixel directly (Bypassing Indexer)
-export async function upsertPixel(x: number, y: number, color: number, painter: string | null) {
+// Upsert a pixel directly (Multi-chain support)
+export async function upsertPixel(
+    x: number, 
+    y: number, 
+    color: number, 
+    painter: string | null,
+    blockchain: 'sui' | 'stellar' | 'starknet' = 'sui',
+    txHash: string | null = null
+) {
     const client = getSupabaseClient();
     if (!client) return;
 
@@ -65,6 +74,8 @@ export async function upsertPixel(x: number, y: number, color: number, painter: 
                 y,
                 color,
                 last_painter: painter,
+                blockchain,
+                tx_hash: txHash,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'x,y' });
 

@@ -1,13 +1,16 @@
 import { create } from 'zustand';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, COLORS, ColorIndex } from './constants';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, COLORS, ColorIndex, BlockchainType } from './constants';
 import { fetchAllPixels, subscribeToPixelChanges, PixelRow } from './supabase';
 
 interface CanvasState {
-    // Pixel grid: Map of "x,y" -> { color: number, owner: string | null }
-    pixels: Map<string, { color: number; owner: string | null }>;
+    // Pixel grid: Map of "x,y" -> { color: number, owner: string | null, blockchain: BlockchainType }
+    pixels: Map<string, { color: number; owner: string | null; blockchain: BlockchainType }>;
 
     // Selected color for drawing
     selectedColor: ColorIndex;
+
+    // Selected blockchain
+    selectedBlockchain: BlockchainType;
 
     // Hover position
     hoverPosition: { x: number; y: number } | null;
@@ -15,33 +18,54 @@ interface CanvasState {
     // Loading state
     isLoading: boolean;
 
-    // Cooldown
-    cooldownEnd: number | null;
+    // Cooldown per blockchain
+    cooldowns: Map<BlockchainType, number | null>;
+
+    // Connected wallets
+    connectedWallets: {
+        sui: string | null;
+        stellar: string | null;
+        starknet: string | null;
+    };
 
     // Actions
-    setPixel: (x: number, y: number, color: number, owner?: string | null) => void;
-    revertPixel: (x: number, y: number, previousState: { color: number; owner: string | null } | null) => void;
+    setPixel: (x: number, y: number, color: number, owner?: string | null, blockchain?: BlockchainType) => void;
+    revertPixel: (x: number, y: number, previousState: { color: number; owner: string | null; blockchain: BlockchainType } | null) => void;
     setSelectedColor: (color: ColorIndex) => void;
+    setSelectedBlockchain: (blockchain: BlockchainType) => void;
     setHoverPosition: (pos: { x: number; y: number } | null) => void;
     loadCanvas: () => Promise<void>;
-    startCooldown: (duration: number) => void;
+    startCooldown: (blockchain: BlockchainType, duration: number) => void;
     getPixelColor: (x: number, y: number) => string;
+    setWalletAddress: (blockchain: BlockchainType, address: string | null) => void;
+    getCooldownEnd: (blockchain: BlockchainType) => number | null;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
     pixels: new Map(),
-    selectedColor: 5, // Default to red
+    selectedColor: 6, // Default to orange
+    selectedBlockchain: 'sui',
     hoverPosition: null,
     isLoading: true,
-    cooldownEnd: null,
+    cooldowns: new Map([
+        ['sui', null],
+        ['stellar', null],
+        ['starknet', null]
+    ]),
+    connectedWallets: {
+        sui: null,
+        stellar: null,
+        starknet: null
+    },
 
-    setPixel: (x, y, color, owner = null) => {
+    setPixel: (x, y, color, owner = null, blockchain = 'sui') => {
         set((state) => {
             const newPixels = new Map(state.pixels);
-            const current = newPixels.get(`${x},${y}`) || { color: 0, owner: null };
+            const current = newPixels.get(`${x},${y}`) || { color: 0, owner: null, blockchain: 'sui' };
             newPixels.set(`${x},${y}`, {
                 color,
-                owner: owner ?? current.owner
+                owner: owner ?? current.owner,
+                blockchain
             });
             return { pixels: newPixels };
         });
@@ -51,10 +75,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         set((state) => {
             const newPixels = new Map(state.pixels);
             if (previousState === null) {
-                // If there was no previous state, remove the pixel (revert to default white)
                 newPixels.delete(`${x},${y}`);
             } else {
-                // Restore the previous state
                 newPixels.set(`${x},${y}`, previousState);
             }
             return { pixels: newPixels };
@@ -63,6 +85,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     setSelectedColor: (color) => set({ selectedColor: color }),
 
+    setSelectedBlockchain: (blockchain) => set({ selectedBlockchain: blockchain }),
+
     setHoverPosition: (pos) => set({ hoverPosition: pos }),
 
     loadCanvas: async () => {
@@ -70,20 +94,26 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
         try {
             const pixelData = await fetchAllPixels();
-            const pixelMap = new Map<string, { color: number; owner: string | null }>();
+            const pixelMap = new Map<string, { color: number; owner: string | null; blockchain: BlockchainType }>();
 
             for (const pixel of pixelData) {
                 pixelMap.set(`${pixel.x},${pixel.y}`, {
                     color: pixel.color,
-                    owner: pixel.last_painter
+                    owner: pixel.last_painter,
+                    blockchain: pixel.blockchain || 'sui'
                 });
             }
 
             set({ pixels: pixelMap, isLoading: false });
 
-            // Subscribe to real-time updates
             subscribeToPixelChanges((pixel) => {
-                get().setPixel(pixel.x, pixel.y, pixel.color, pixel.last_painter);
+                get().setPixel(
+                    pixel.x, 
+                    pixel.y, 
+                    pixel.color, 
+                    pixel.last_painter, 
+                    pixel.blockchain || 'sui'
+                );
             });
 
         } catch (error) {
@@ -92,11 +122,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         }
     },
 
-    startCooldown: (duration) => {
-        set({ cooldownEnd: Date.now() + duration });
+    startCooldown: (blockchain, duration) => {
+        set((state) => {
+            const newCooldowns = new Map(state.cooldowns);
+            newCooldowns.set(blockchain, Date.now() + duration);
+            return { cooldowns: newCooldowns };
+        });
 
         setTimeout(() => {
-            set({ cooldownEnd: null });
+            set((state) => {
+                const newCooldowns = new Map(state.cooldowns);
+                newCooldowns.set(blockchain, null);
+                return { cooldowns: newCooldowns };
+            });
         }, duration);
     },
 
@@ -104,4 +142,17 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         const pixel = get().pixels.get(`${x},${y}`);
         return pixel ? COLORS[pixel.color as ColorIndex] : COLORS[0];
     },
+
+    setWalletAddress: (blockchain, address) => {
+        set((state) => ({
+            connectedWallets: {
+                ...state.connectedWallets,
+                [blockchain]: address
+            }
+        }));
+    },
+
+    getCooldownEnd: (blockchain) => {
+        return get().cooldowns.get(blockchain) || null;
+    }
 }));
